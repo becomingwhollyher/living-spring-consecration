@@ -55,32 +55,34 @@
 <label class="mobile-label" for="becoming">Who do I believe God is calling me to become?</label><textarea id="becoming" class="input becoming" name="becoming" placeholder="Write here…" aria-label="Who do I believe God is calling me to become?"></textarea>
 <label class="mobile-label" for="remember">Future me, I hope you remember...</label><textarea id="remember" class="input remember dark" name="remember" placeholder="Write here…" aria-label="Future me, I hope you remember"></textarea>
 <label class="mobile-label" for="signed">Signed</label><input id="signed" class="input signed" name="signed" type="text" maxlength="100" placeholder="Your name" aria-label="Signed">
-</section><div id="printOverflow" class="print-overflow"></div><div class="actions"><button id="download" type="submit">Download my personal PDF</button><p id="status">Your answers are not submitted to Living Spring. Save the downloaded PDF to your device or your private Google Drive.</p></div></form><p class="end">PRIVATE · PERSONAL · PURPOSEFUL</p></main>
+</section><div id="printOverflow" class="print-overflow"></div><div class="actions"><button id="download" type="submit">Save my personal PDF</button><p id="status">Your answers are not submitted to Living Spring. Save the downloaded PDF to your device or your private Google Drive.</p></div></form><p class="end">PRIVATE · PERSONAL · PURPOSEFUL</p></main>
 <script>
 (()=>{
-const form=document.getElementById('letterForm'),status=document.getElementById('status'),button=form.querySelector('button[type="submit"]');
-const imgs=[document.querySelector('.opening-sheet>img'),document.querySelector('.form-sheet>img')];
-const entries=[
- ['writtenOn',159,325,245,28,'#fff'],['openOn',627,325,268,28,'#fff'],
- ['rightNow',158,487,762,62,'#fff'],['surrendering',158,649,762,60,'#e8f4fd'],
- ['developing',158,810,762,32,'#fff'],['habit',158,941,762,32,'#e8f4fd'],
- ['becoming',158,1072,762,32,'#fff'],['remember',155,1193,766,55,'#0b345e'],
- ['signed',214,1291,260,25,'#fff']
-];
-const labels={writtenOn:'Written on',openOn:'Open on',rightNow:'Where am I right now?',surrendering:'What am I surrendering to God?',developing:'What am I asking God to develop in me?',habit:'What spiritual habit am I committing to?',becoming:'Who do I believe God is calling me to become?',remember:'Future me, I hope you remember...',signed:'Signed'};
-function canvas(){const c=document.createElement('canvas');c.width=1080;c.height=1350;return c}
-function lines(ctx,value,maxWidth){const out=[];for(const paragraph of value.split(/\r?\n/)){let line='';for(const word of paragraph.split(/\s+/).filter(Boolean)){const test=line?line+' '+word:word;if(ctx.measureText(test).width<=maxWidth){line=test}else{if(line)out.push(line);line=word}}out.push(line)}return out}
-function draw(ctx,value,x,y,w,h,dark){if(!value)return '';ctx.fillStyle=dark?'#fff':'#0b345e';ctx.font='21px Arial';ctx.textBaseline='top';const all=lines(ctx,value,w-18),max=Math.max(1,Math.floor((h-8)/25));all.slice(0,max).forEach((line,i)=>ctx.fillText(line,x+8,y+4+i*25));return all.length>max?value:''}
-function background(img){const c=canvas(),ctx=c.getContext('2d');ctx.drawImage(img,0,0,1080,1350);return {c,ctx}}
-function continuation(items){const pages=[];let current=null,y=0;const fresh=()=>{current=canvas();pages.push(current);const ctx=current.getContext('2d');ctx.fillStyle='#f5faff';ctx.fillRect(0,0,1080,1350);ctx.fillStyle='#0b345e';ctx.fillRect(0,0,1080,170);ctx.font='bold 48px Georgia';ctx.fillStyle='#fff';ctx.fillText('DEAR FUTURE ME',85,105);y=230};fresh();for(const [name,value] of items){let ctx=current.getContext('2d');if(y>1130){fresh();ctx=current.getContext('2d')}ctx.fillStyle='#086cbe';ctx.font='bold 27px Arial';ctx.fillText(labels[name].toUpperCase(),85,y);y+=35;ctx.fillStyle='#0b345e';ctx.font='25px Arial';for(const line of lines(ctx,value,900)){if(y>1240){fresh();ctx=current.getContext('2d');ctx.fillStyle='#0b345e';ctx.font='25px Arial'}ctx.fillText(line,85,y);y+=35}y+=45}return pages}
-function jpegBytes(c){const b64=c.toDataURL('image/jpeg',.92).split(',')[1],binary=atob(b64),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes}
-function makePdf(canvases){const enc=new TextEncoder(),parts=[],offsets=[0];let position=0;const add=v=>{const bytes=typeof v==='string'?enc.encode(v):v;parts.push(bytes);position+=bytes.length};const obj=(n,content)=>{offsets[n]=position;add(n+' 0 obj\n');add(content);add('\nendobj\n')};add('%PDF-1.4\n');const pageIds=canvases.map((_,i)=>3+i*3);obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,'<< /Type /Pages /Kids ['+pageIds.map(n=>n+' 0 R').join(' ') +'] /Count '+canvases.length+' >>');canvases.forEach((c,i)=>{const p=3+i*3,img=p+1,stream=p+2,bytes=jpegBytes(c);obj(p,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 540 675] /Resources << /XObject << /Im0 '+img+' 0 R >> >> /Contents '+stream+' 0 R >>');offsets[img]=position;add(img+' 0 obj\n<< /Type /XObject /Subtype /Image /Width 1080 /Height 1350 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+bytes.length+' >>\nstream\n');add(bytes);add('\nendstream\nendobj\n');const content='q 540 0 0 675 0 0 cm /Im0 Do Q\n';obj(stream,'<< /Length '+enc.encode(content).length+' >>\nstream\n'+content+'endstream')});const xref=position;add('xref\n0 '+offsets.length+'\n0000000000 65535 f \n');for(let i=1;i<offsets.length;i++)add(String(offsets[i]).padStart(10,'0')+' 00000 n \n');add('trailer\n<< /Size '+offsets.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF');return new Blob(parts,{type:'application/pdf'})}
-form.addEventListener('submit',e=>{e.preventDefault();button.disabled=true;status.classList.remove('error');status.textContent='Creating your personal PDF…';try{
-if(imgs.some(img=>!img.complete||!img.naturalWidth))throw Error('The card images have not loaded. Refresh and try again.');
-const first=background(imgs[0]);first.ctx.fillStyle='#fff';first.ctx.fillRect(165,452,760,114);first.ctx.fillStyle='#193b59';first.ctx.font='21px Arial';first.ctx.fillText('I hope you remember this version of me - the version that was still',170,475);first.ctx.fillText('figuring things out. Still waiting. Still afraid. Still asking God questions.',170,504);first.ctx.fillStyle='#0b345e';first.ctx.font='bold 21px Arial';first.ctx.fillText('But I hope you also remember that this was the moment I made',170,533);first.ctx.fillText('a decision.',170,562);
-const second=background(imgs[1]),data=Object.fromEntries(new FormData(form).entries()),extra=[];
-for(const [key,x,y,w,h,color] of entries){const value=(data[key]||'').trim();if(!value)continue;second.ctx.fillStyle=color;second.ctx.fillRect(x,y,w,h);const long=draw(second.ctx,value,x,y,w,h,color==='#0b345e');if(long)extra.push([key,long])}
-const blob=makePdf([first.c,second.c,...(extra.length?continuation(extra):[])]),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='My-Letter-to-Future-Me.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);status.textContent='Your PDF is ready. On iPhone, use Share → Save to Files if it opens in a preview.';
-}catch(err){status.classList.add('error');status.textContent=err.message||'Could not create the PDF.'}finally{button.disabled=false}});
+ const form=document.getElementById('letterForm'),status=document.getElementById('status');
+ const labels={writtenOn:'Written on',openOn:'Open on',rightNow:'Where am I right now?',surrendering:'What am I surrendering to God?',developing:'What am I asking God to develop in me?',habit:'What spiritual habit am I committing to?',becoming:'Who do I believe God is calling me to become?',remember:'Future me, I hope you remember...',signed:'Signed'};
+ const zones={writtenOn:28,openOn:28,rightNow:65,surrendering:65,developing:34,habit:34,becoming:34,remember:55,signed:28};
+ function prepare(){
+  document.querySelectorAll('.print-answer').forEach(el=>el.remove());
+  const overflow=document.getElementById('printOverflow');overflow.innerHTML='';
+  for(const [key,label] of Object.entries(labels)){
+   const field=form.elements.namedItem(key);const value=field.value.trim();
+   if(!value)continue;
+   const clone=document.createElement('div');clone.className='print-answer '+key;
+   clone.textContent=value;document.querySelector('.form-sheet').appendChild(clone);
+   const estimatedLines=value.split('\n').reduce((count,line)=>count+Math.max(1,Math.ceil(line.length/(key==='writtenOn'||key==='openOn'?20:68))),0);
+   if(estimatedLines*18>zones[key]){
+    const item=document.createElement('section');item.className='continuation';
+    const heading=document.createElement('h2');heading.textContent=label;
+    const answer=document.createElement('p');answer.textContent=value;
+    item.append(heading,answer);overflow.appendChild(item);
+   }
+  }
+ }
+ form.addEventListener('submit',event=>{
+  event.preventDefault();prepare();status.classList.remove('error');
+  status.textContent='In the print window, choose “Save as PDF” (or “Print” then “Save to Files” on iPhone).';
+  requestAnimationFrame(()=>setTimeout(()=>window.print(),100));
+ });
+ window.addEventListener('beforeprint',prepare);
 })();
 </script></body></html>
